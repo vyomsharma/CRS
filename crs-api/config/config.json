@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "Patanahi@123",
+    "database": "crs",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "Patanahi@123",
+    "database": "crs",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": "Patanahi@123",
+    "database": "crs",
+    "host": "localhost",
+    "dialect": "mysql"
+  }
+}
