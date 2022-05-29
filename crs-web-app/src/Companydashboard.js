@@ -39,6 +39,7 @@ class Companydashboard extends Component {
             jobDescription: "",
             jobsArray: [],
             studentArray: [],
+            showAppliedUsersTable: false,
         }
         // Log Out Handler 
         this.logOut = this.logOut.bind(this);
@@ -63,11 +64,12 @@ class Companydashboard extends Component {
         this.jobSalaryHandler = this.jobSalaryHandler.bind(this);
         this.jobDescriptionHandler = this.jobDescriptionHandler.bind(this);
         this.jobPostingHandler = this.jobPostingHandler.bind(this);
+        
+        // Show & Hide Applied User Table Handlers
+        this.showAppliedUsersTableHandler = this.showAppliedUsersTableHandler.bind(this);
     }
 
     componentDidMount() {
-        let jobsArray = [];
-        let studentArray = [];
         let userData;
         var that = this;
         firebaseconfig.auth().onAuthStateChanged(function (user) {
@@ -83,17 +85,20 @@ class Companydashboard extends Component {
                 })
                 let jobRefKey = firebaseconfig.database().ref().child(uid).child('jobs');
                 if(jobRefKey !== null){
-                    jobRefKey.once('value', (dataSnapShot) => {
+                    jobRefKey.on('value', (dataSnapShot) => {
+                        let jobsArray = [];
                         for(let key in dataSnapShot.val()){
                             jobsArray.push(dataSnapShot.val()[key])
                         }
-                    })
-                    that.setState({
-                        jobsArray: jobsArray,
+                        that.setState({
+                            jobsArray: jobsArray,
+                        })
                     })
                 }
+
                 let studentRefKey = firebaseconfig.database().ref();
-                studentRefKey.once('value', (dataSnapShot) => {
+                studentRefKey.on('value', (dataSnapShot) => {
+                    let studentArray = [];
                     for(let key in dataSnapShot.val()){
                         if (dataSnapShot.val()[key].userStatus.student === true) {
                             studentArray.push(dataSnapShot.val()[key])
@@ -104,7 +109,7 @@ class Companydashboard extends Component {
                     })
                 })
             } else {
-                console.log("User is not logged in")
+                // console.log("User is not logged in")
             }
         });
     }
@@ -197,7 +202,7 @@ class Companydashboard extends Component {
                         userData: userData,
                     })
                 })
-                firebaseRefKey.set(that.state.userData)
+                firebaseRefKey.update(that.state.userData)
                 swal.fire({
                     type: 'success',
                     title: 'Successfully Updated',
@@ -208,7 +213,7 @@ class Companydashboard extends Component {
                     })
                 });
             } else {
-                console.log("User is not logged in")
+                // console.log("User is not logged in")
             }
         });
     }
@@ -254,6 +259,7 @@ class Companydashboard extends Component {
             jobSalary: this.state.jobSalary,
             jobDescription: this.state.jobDescription,
             jobPostDate: currentDate,
+            appliedUsers: "",
         }
         let userData;
         let that = this;
@@ -286,9 +292,21 @@ class Companydashboard extends Component {
                     })
                 });
             } else {
-                console.log("User is not logged in")
+                // console.log("User is not logged in")
             }
         });
+    }
+
+    showAppliedUsersTableHandler(event){
+        if(this.state.showAppliedUsersTable){
+            this.setState({
+                showAppliedUsersTable: false,
+            })
+        }else{
+            this.setState({
+                showAppliedUsersTable: true,
+            })
+        }
     }
 
     logOut() {
@@ -313,20 +331,58 @@ class Companydashboard extends Component {
         });
     }
     render() {
-
         let myJobItems = this.state.jobsArray.map((value) => {
             return(
-                <div key={value.jobUid}>
-                    <div className="col-lg-11 col-md-11 p-3 mx-auto border border-bottom-0 border-primary">
+                <div key={value.jobUid} className="shadow">
+                    <div className="col-12 p-3 mx-auto border border-bottom-0 border-primary">
                         <h3 className="h3 text-dark mb-3">{value.jobTitle}</h3>
                         <strong><p className="text-secondary"><span>{value.companyName}</span><span className="ml-3">{value.jobLocation}</span></p></strong>
                         <p>{value.jobDescription}</p>
+                        <div className="col-12 px-lg-3 px-md-3 px-0 mx-auto">
+                            {
+                                this.state.showAppliedUsersTable ?
+                                <table className="table-responsive-sm table-bordered table">
+                                    <thead className="thead-light">
+                                        <tr>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Qualification</th>
+                                            <th scope="col">Year</th>
+                                            <th scope="col">Location</th>
+                                            <th scope="col">Email</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>{
+                                        value.appliedUsers ? 
+                                        Object.keys(value.appliedUsers).map((appliedUsersValue)=>{
+                                            return(
+                                                <tr key={appliedUsersValue}>
+                                                    <td>{value.appliedUsers[appliedUsersValue].userFullName}</td>
+                                                    <td>{value.appliedUsers[appliedUsersValue].userQualification}</td>
+                                                    <td>{value.appliedUsers[appliedUsersValue].userPassingYear}</td>
+                                                    <td>{value.appliedUsers[appliedUsersValue].userLocation}</td>
+                                                    <td><a href={"mailto:"+value.appliedUsers[appliedUsersValue].userEmail}>{value.appliedUsers[appliedUsersValue].userEmail}</a></td>
+                                                </tr>
+                                            )
+                                        }) : null
+                                    }</tbody>
+                                </table> : null
+                            }
+                        </div>
                     </div>
-                    <div className="col-lg-11 col-md-11 py-2 mb-3 mx-auto border border-primary">
-                        <small>
-                        <i className="far fa-calendar-alt text-primary mr-2"></i><span>{value.jobPostDate}</span>
-                        <i className="fas fa-dollar-sign text-primary ml-3 mr-2"></i><span>{value.jobSalary}</span>
-                        </small>
+                    <div className="col-12 py-2 mb-4 mx-auto border border-primary">
+                        <div className="row">
+                            <div className="col-lg-6 col-md-6">
+                                <small>
+                                    <i className="far fa-calendar-alt text-primary mr-2"></i><span>{value.jobPostDate}</span>
+                                    <i className="fas fa-dollar-sign text-primary ml-3 mr-2"></i><span>{value.jobSalary}</span>
+                                </small>
+                            </div>
+                            <div className="col-lg-6 col-md-6 text-lg-right text-md-right">
+                                {/* Show & Hide applied user table */}
+                                <button type="button" onClick={
+                                    this.showAppliedUsersTableHandler} className="btn btn-success mt-lg-0 mt-md-0 mt-3 mr-3 text-uppercase">Applied Users</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )
@@ -334,15 +390,15 @@ class Companydashboard extends Component {
 
         let studentList = this.state.studentArray.map((value) => {
             return(
-                <div key={value.userUid}>
-                    <div className="col-lg-11 col-md-11 p-3 mx-auto border border-bottom-0 border-primary">
+                <div key={value.userUid} className="shadow">
+                    <div className="col-12 p-3 mx-auto border border-bottom-0 border-primary">
                         <h3 className="h3 text-dark mb-3">{value.userFullName}</h3>
                         <strong><p className="text-secondary"><span>{value.userQualification}</span><span className="ml-3">{value.userLocation}</span></p></strong>
                         <p>{value.userBio}</p>
                     </div>
-                    <div className="col-lg-11 col-md-11 py-2 mb-3 mx-auto border border-primary">
+                    <div className="col-12 py-2 mb-4 mx-auto border border-primary">
                         <small>
-                            <i className="far fa-envelope text-primary mr-2"></i><span>{value.userEmail}</span>
+                            <i className="far fa-envelope text-primary mr-2"></i><span><a href={"mailto"+value.userEmail}>{value.userEmail}</a></span>
                         </small>
                     </div>
                 </div>
@@ -353,7 +409,7 @@ class Companydashboard extends Component {
                 {this.state.showEditForm ?
                     <div className="col-11 mx-auto py-4 px-lg-5 px-md-5 my-5 bg-white shadow border border-primary">
                         <div className="col-lg-6 col-md-6 mx-auto">
-                            <h2 className="h2 text-center text-dark mb-3">Edit Profile</h2>
+                            <h2 className="h2 text-center text-dark mb-3 text-uppercase"><strong>Edit Profile</strong></h2>
                             <div className="form-group">
                                 <label htmlFor="userFullName">Full name</label>
                                 <input type="text" value={this.state.userFullName} onChange={this.userFullNameHandler} className="form-control" id="userFullName" placeholder="Name" />
@@ -468,14 +524,14 @@ class Companydashboard extends Component {
                         {this.state.showOtherDivs.myJobs ?
                             <div>
                                 <div className="col-11 pt-4 pb-5 px-lg-5 px-md-5 mx-auto my-4 bg-white shadow border border-primary">
-                                    <h2 className="h2 text-center text-dark mb-4">My Jobs</h2>
+                                    <h2 className="h2 text-center text-dark mb-4 text-uppercase"><strong>My Jobs</strong></h2>
                                     {myJobItems}
                                 </div>
                             </div> :
                         this.state.showOtherDivs.postNewJobs ?
                             <div>
                                 <div className="col-11 py-4 px-lg-5 px-md-5 mx-auto my-4 bg-white shadow border border-primary">
-                                    <h2 className="h2 text-center text-dark mb-3">Post New Jobs</h2>
+                                    <h2 className="h2 text-center text-dark mb-3 text-uppercase"><strong>Post New Jobs</strong></h2>
                                     <div className="form-group">
                                         <label htmlFor="jobTitle">Job Title</label>
                                         <input type="text" value={this.state.jobTitle} onChange={this.jobTitleHandler} className="form-control" id="jobTitle" placeholder="Job Title/ Job Position" />
@@ -501,7 +557,7 @@ class Companydashboard extends Component {
                             <div>
 
                                 <div className="col-11 pt-4 pb-5 px-lg-5 px-md-5 mx-auto my-4 bg-white shadow border border-primary">
-                                    <h2 className="h2 text-center text-dark mb-4">Students List</h2>
+                                    <h2 className="h2 text-center text-dark mb-4 text-uppercase"><strong>Students List</strong></h2>
                                     {studentList}                                
                                 </div>
                             </div> : null
@@ -514,11 +570,9 @@ class Companydashboard extends Component {
         )
     }
 }
-
 function WithNavigate(props) {
     let navigate = useNavigate();
     return <Companydashboard {...props} navigate={navigate} />
 }
 
 export default WithNavigate
-

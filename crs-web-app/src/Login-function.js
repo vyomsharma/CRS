@@ -52,13 +52,11 @@ export default function Login() {
                         firebaseRefKey.on('value', (dataSnapShot) => {
                             // console.log(dataSnapShot.val().userStatus);
                             if (dataSnapShot.val().userStatus.company === true) {
-                                
                                 navigate('/company-dashboard');
-                                //that.props.history.push('/company-dashboard')
                             } else if (dataSnapShot.val().userStatus.student === true) {
-                                that.props.history.push('/student-dashboard')
+                                navigate('/student-dashboard')
                             } else if (dataSnapShot.val().userStatus.admin === true) {
-                                that.props.history.push('/admin-dashboard')
+                                navigate('/admin-dashboard')
                             }
                             // if (dataSnapShot.val().userStatus !== null) {
                             // } else {

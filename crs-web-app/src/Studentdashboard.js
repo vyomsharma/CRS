@@ -48,8 +48,6 @@ class Studentdashboard extends Component {
     }
 
     componentDidMount() {
-        let jobsArray = [];
-        let companyArray = [];
         let userData;
         var that = this;
         firebaseconfig.auth().onAuthStateChanged(function (user) {
@@ -65,9 +63,10 @@ class Studentdashboard extends Component {
                         userData: userData,
                     })
                 })
+                that.state.jobsArray = [];
                 let jobRefKey = firebaseconfig.database().ref();
-
-                jobRefKey.once('value', (dataSnapShot) => {
+                jobRefKey.on('value', (dataSnapShot) => {
+                    let jobsArray = [];
                     for(let key1 in dataSnapShot.val()){
                         if(dataSnapShot.val()[key1].jobs !== undefined){
                             for(let key2 in dataSnapShot.val()[key1].jobs){
@@ -84,7 +83,8 @@ class Studentdashboard extends Component {
                 })
                 
                 let companyRefKey = firebaseconfig.database().ref();
-                companyRefKey.once('value', (dataSnapShot) => {
+                companyRefKey.on('value', (dataSnapShot) => {
+                    let companyArray = [];
                     // console.log(dataSnapShot.val());
                     for(let key in dataSnapShot.val()){
                         if (dataSnapShot.val()[key].userStatus.company === true) {
@@ -97,7 +97,7 @@ class Studentdashboard extends Component {
                     // console.log(companyArray)
                 })
             } else {
-                console.log("User is not logged in")
+                // console.log("User is not logged in")
             }
         });
     }
@@ -201,7 +201,7 @@ class Studentdashboard extends Component {
                     })
                 });
             } else {
-                console.log("User is not logged in")
+                // console.log("User is not logged in")
             }
         });
     }
@@ -239,23 +239,74 @@ class Studentdashboard extends Component {
         });
     }
     render() {
-
         let jobList = this.state.jobsArray.map((value) => {
             return(
-                <div key={value.jobUid}>
-                    <div className="col-lg-11 col-md-11 p-3 mx-auto border border-bottom-0 border-primary">
+                <div key={value.jobUid} className="shadow">
+                    <div className="col-12 p-3 mx-auto border border-bottom-0 border-primary">
                         <h3 className="h3 text-dark mb-3">{value.jobTitle}</h3>
                         <div id="jobDetails">
                             <strong><p className="text-secondary mb-0"><span>{value.companyName}</span>,<span className="ml-3">{value.jobLocation}</span></p></strong>
-                            <strong><p className="text-secondary"><span>Apply Now:</span><span className="ml-3">{value.companyEmail}</span></p></strong>
+                            <strong><p className="text-secondary"><span>Apply Now:</span><span className="ml-3"><a href={"mailto:"+value.companyEmail} >{value.companyEmail}</a></span></p></strong>
                         </div>
                         <p>{value.jobDescription}</p>
                     </div>
-                    <div className="col-lg-11 col-md-11 py-2 mb-3 mx-auto border border-primary">
-                        <small>
-                        <i className="far fa-calendar-alt text-primary mr-2"></i><span>{value.jobPostDate}</span>
-                        <i className="fas fa-dollar-sign text-primary ml-3 mr-2"></i><span>{value.jobSalary}</span>
-                        </small>
+                    <div className="col-12 py-2 mb-4 mx-auto border border-primary">
+                        <div className="row">
+                            <div className="col-lg-6 col-md-6">
+                            
+                                <small>
+                                <i className="far fa-calendar-alt text-primary mr-2"></i><span>{value.jobPostDate}</span>
+                                <i className="fas fa-dollar-sign text-primary ml-3 mr-2"></i><span>{value.jobSalary}</span>
+                                </small>
+                            </div>
+                            <div className="col-lg-6 col-md-6 text-lg-right text-md-right">
+                                <button type="button" onClick={() => {
+                                    let appliedUsersFlag = true;
+                                    let appliedFlag = true;
+                                    let jobPost = firebaseconfig.database().ref().child(value.companyUid).child('jobs').child(value.jobUid)
+                                    // jobPost.child("appliedUsers").child(this.state.userData.userUid).set(this.state.userData)
+                                    jobPost.once('value', (dataSnapShot)=>{
+                                        for(let key1 in dataSnapShot.val()){
+                                            if(key1 === "appliedUsers"){
+                                                appliedUsersFlag = false;
+                                                for(let key2 in dataSnapShot.val()[key1]){
+                                                    if(key2 === this.state.userData.userUid){
+                                                        appliedFlag = false;
+                                                        break;
+                                                    }
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    })
+                                    if(appliedUsersFlag){
+                                        swal.fire({
+                                            type: 'success',
+                                            title: 'Successfully Applied',
+                                            text: 'You have successfully applied for this job',
+                                        }).then((val) => {
+                                            firebaseconfig.database().ref().child(value.companyUid).child('jobs').child(value.jobUid).child("appliedUsers").child(this.state.userData.userUid).set(this.state.userData);
+                                        });
+                                    }
+                                    if(appliedFlag){
+                                        swal.fire({
+                                            type: 'success',
+                                            title: 'Successfully Applied',
+                                            text: 'You have successfully applied for this job',
+                                        }).then((val) => {
+                                            firebaseconfig.database().ref().child(value.companyUid).child('jobs').child(value.jobUid).child("appliedUsers").child(this.state.userData.userUid).set(this.state.userData);
+                                        });
+                                    }else{
+                                        swal.fire({
+                                            type: 'error',
+                                            title: 'Already Applied',
+                                            text: 'You have already applied to this job',
+                                        })
+                                    }
+                                    // this.componentDidMount();
+                                }} className="btn btn-success mt-lg-0 mt-md-0 mt-3 text-uppercase">Apply Now</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )
@@ -264,15 +315,15 @@ class Studentdashboard extends Component {
         // console.log(this.state.companyArray);
         let companyList = this.state.companyArray.map((value) => {
             return(
-                <div key={value.userUid}>
-                    <div className="col-lg-11 col-md-11 p-3 mx-auto border border-bottom-0 border-primary">
+                <div key={value.userUid} className="shadow">
+                    <div className="col-12 p-3 mx-auto border border-bottom-0 border-primary">
                         <h3 className="h3 text-dark mb-3">{value.userFullName}</h3>
                         <strong><p className="text-secondary"><span>{value.userIndustry}</span><span className="ml-3">{value.userLocation}</span></p></strong>
                         <p>{value.userBio}</p>
                     </div>
-                    <div className="col-lg-11 col-md-11 py-2 mb-3 mx-auto border border-primary">
+                    <div className="col-12 py-2 mb-4 mx-auto border border-primary">
                         <small>
-                            <i className="far fa-envelope text-primary mr-2"></i><span>{value.userEmail}</span>
+                            <i className="far fa-envelope text-primary mr-2"></i><span><a href={"mailto:"+value.userEmail}>{value.userEmail}</a></span>
                         </small>
                     </div>
                 </div>
@@ -283,7 +334,7 @@ class Studentdashboard extends Component {
                 {this.state.showEditForm ?
                     <div className="col-11 mx-auto py-4 px-lg-5 px-md-5 my-5 bg-white shadow border border-primary">
                         <div className="col-lg-6 col-md-6 mx-auto">
-                            <h2 className="h2 text-center text-dark mb-3">Edit Profile</h2>
+                            <h2 className="h2 text-center text-dark mb-3 text-uppercase"><strong>Edit Profile</strong></h2>
                             <div className="form-group">
                                 <label htmlFor="userFullName">Full name</label>
                                 <input type="text" value={this.state.userFullName} onChange={this.userFullNameHandler} className="form-control" id="userFullName" placeholder="Name" />
@@ -392,7 +443,7 @@ class Studentdashboard extends Component {
                         {this.state.showOtherDivs.jobList ?
                             <div>
                                 <div className="col-11 pt-4 pb-5 px-lg-5 px-md-5 mx-auto my-4 bg-white shadow border border-primary">
-                                    <h2 className="h2 text-center text-dark mb-4">Job List</h2>
+                                    <h2 className="h2 text-center text-dark mb-4 text-uppercase"><strong>Job List</strong></h2>
                                     {jobList}
                                 </div>
                             </div> :
@@ -400,19 +451,18 @@ class Studentdashboard extends Component {
                             <div>
 
                                 <div className="col-11 pt-4 pb-5 px-lg-5 px-md-5 mx-auto my-4 bg-white shadow border border-primary">
-                                    <h2 className="h2 text-center text-dark mb-4">Companies List</h2>
+                                    <h2 className="h2 text-center text-dark mb-4 text-uppercase"><strong>Company List</strong></h2>
                                     {companyList}                                
                                 </div>
                             </div> : null
                         }
-
-
                     </div>
                 }
             </div>
         )
     }
 }
+
 function WithNavigate(props) {
     let navigate = useNavigate();
     return <Studentdashboard {...props} navigate={navigate} />

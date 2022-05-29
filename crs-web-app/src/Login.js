@@ -58,7 +58,6 @@ class Login extends Component {
                             // console.log(dataSnapShot.val().userStatus);
                             if (dataSnapShot.val().userStatus.company === true) {
                                 that.props.navigate('/company-dashboard');
-                                //that.props.history.push('/company-dashboard')
                             } else if (dataSnapShot.val().userStatus.student === true) {
                                 that.props.navigate('/student-dashboard')
                             } else if (dataSnapShot.val().userStatus.admin === true) {
